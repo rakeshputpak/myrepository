@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="2d5f0c97-dae6-4ff1-bb0b-6866176b56b0" >
+		<http:listener-connection host="0.0.0.0" port="8090" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="7cad4ebb-e40a-4f9b-b73d-f2fcf69f852b" >
+		<http:request-connection protocol="HTTPS" host="api.covid19india.org" />
+	</http:request-config>
+	<sub-flow name="Covid" doc:id="d3b8fdd1-9208-43b1-919a-99e7c1c21f14" >
+		<http:request method="GET" doc:name="Request" doc:id="94a35454-8991-4c88-8943-9182308dc0db" config-ref="HTTP_Request_configuration" path="/data.json">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	daysInPast : vars.Days,
+	country : vars.country
+}]]]></http:query-params>
+		</http:request>
+	</sub-flow>
+	<flow name="covidFlow" doc:id="3bb9e45c-9957-42f8-863b-407be0c5b07a" >
+		<http:listener doc:name="Listener" doc:id="bb6aa8fa-ff14-4241-8a96-5bb9393e3a25" config-ref="HTTP_Listener_config" path="/Covid"/>
+		<set-variable value="#[attributes.queryParams.Days]" doc:name="Days" doc:id="15ed28b4-a6a3-47bc-b035-ebe9d5dc0b54" variableName="Days"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="ffade112-5c63-455d-984a-c27e42df8bfc" target="rr" maxConcurrency="11"/>
+		<set-variable value="#[attributes.queryParams.country]" doc:name="country" doc:id="6d436158-164d-488d-ab76-08eba601b471" variableName="country"/>
+		<flow-ref doc:name="Flow Reference" doc:id="8efd8e37-1863-476c-ac02-ed39d2e95c2f" name="Covid"/>
+	</flow>
+</mule>
